@@ -1,7 +1,6 @@
-pandas>=2.3
+pandas>=3
 pyarrow>=22.0
-duckdb>=1.4
-pyspark>=4.0
+daft>=0.7.0
 pyiceberg>=0.10
 matplotlib>=3.10
 python-dateutil

@@ -4,17 +4,6 @@ import pandas as pd
 import pyarrow.parquet as pq
 from IPython.display import display, HTML
 
-def read_jsonl(file_path: Path) -> list:
-    data = []
-    print(f"Reading {file_path.stat().st_size / 1024**2:.2f} MB data from {file_path}...")
-    with open(file_path, 'r', encoding='utf-8') as f:
-        for i, line in enumerate(f):
-            if i % 100000 == 0 and i > 0:
-                print(f"Read {i:,} records...", end='\r')
-            data.append(json.loads(line))
-    print(f"Total records loaded: {len(data):,}\n")
-    return data
-
 def inspect(file_path: Path) -> None:
     import struct
 

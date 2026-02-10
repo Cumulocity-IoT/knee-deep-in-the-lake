@@ -21,20 +21,20 @@ Learn practical skills for IoT data management and analytics:
 
 The training is oriented towards people with some level of development background and technical interest. The following technology stack is used:
 
-- **Python+** - Core programming language
+- **Python** - Core programming language
 - **Jupyter Lab** - Interactive development environment
 - **Apache Parquet** - Columnar storage format
 - **Apache Iceberg** - Table format for data lakes
 - **PyArrow** - Fast columnar data processing
 - **Pandas** - Data manipulation and analysis
-- **DuckDB** - In-process analytical database
+- **Daft** - In-process analytical database
 - **Plotly** - Interactive visualizations
 
 You do not need to know the entire stack, but some level of Python and SQL knowledge is required. It is also helpful to have a basic understanding of [Jupyter Notebooks](https://jupyterlab.readthedocs.io/en/latest/). If you are a VS Code user, there is an [extension for notebooks](https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter) and for [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python).
 
 Since different programming languages use different optimization heuristics when writing Parquet files, code for other languages is also being developed.
 
-## 🚀 Quick Start
+## Quick Start
 
 If you haven't already, download and install [Python](https://www.python.org/downloads/). There are several options to use the notebooks:
 

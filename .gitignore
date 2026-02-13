@@ -210,3 +210,5 @@ data/output/**
 !data/output/.gitkeep
 data/temp/**
 data/input/.DS_Store
+data/warehouse*/**
+.DS_Store

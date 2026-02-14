@@ -5,3 +5,8 @@ pyiceberg>=0.10
 matplotlib>=3.10
 python-dateutil
 jupyterlab>=4.5
+moto[server]
+boto3
+s3fs
+flask
+werkzeug

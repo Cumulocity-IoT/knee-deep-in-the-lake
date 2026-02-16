@@ -72,7 +72,7 @@ def inspect_iceberg_table(table) -> None:
                 </tr>
         """
 
-        if summary in current_snapshot:
+        if hasattr(current_snapshot, 'summary') and current_snapshot.summary:
             summary = current_snapshot.summary.additional_properties
             if summary:
                 html += """
@@ -165,7 +165,7 @@ def inspect_iceberg_table(table) -> None:
                 <strong>Time:</strong> {datetime.fromtimestamp(snapshot.timestamp_ms / 1000).strftime('%Y-%m-%d %H:%M:%S')}<br>
         """
 
-        if summary in snapshot:
+        if hasattr(snapshot, 'summary') and snapshot.summary:
             html += f"<strong>Operation:</strong> {snapshot.summary.operation.value}<br>"
             if snapshot.summary.additional_properties:
                 html += "<strong>Changes:</strong> "

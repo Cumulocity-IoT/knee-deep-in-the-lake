@@ -11,3 +11,4 @@ s3fs
 flask
 werkzeug
 sqlalchemy
+fastavro

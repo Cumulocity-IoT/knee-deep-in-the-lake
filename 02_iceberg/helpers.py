@@ -1,10 +1,8 @@
 import json
+import fastavro
 from pathlib import Path
-import pandas as pd
 from IPython.display import display, HTML
 from datetime import datetime
-import pyarrow as pa
-import pyarrow.parquet as pq
 
 def inspect_iceberg_table(table) -> None:
     """
@@ -359,6 +357,7 @@ def inspect_metadata_json(json_path: Path) -> None:
     """
 
     display(HTML(html))
+    return metadata
 
 
 def inspect_manifest(manifest_path: Path) -> None:
@@ -451,43 +450,55 @@ def inspect_manifest(manifest_path: Path) -> None:
                     </tr>
             """
 
-        # Value counts (statistics)
+        # Value counts (statistics) - handle both dict and list formats
         if data_file.get('value_counts'):
             html += """
                     <tr style="background-color: #fff;">
                         <td style="padding: 5px; border: 1px solid #ddd; font-weight: bold; vertical-align: top;">Value Counts:</td>
                         <td style="padding: 5px; border: 1px solid #ddd;">
             """
-            for key, value in sorted(data_file['value_counts'].items()):
-                html += f"<div><code>{key}</code>: {value:,}</div>"
+            value_counts = data_file['value_counts']
+            if isinstance(value_counts, dict):
+                for key, value in sorted(value_counts.items()):
+                    html += f"<div><code>{key}</code>: {value:,}</div>"
+            else:
+                html += f"<div>{len(value_counts)} column(s) with statistics</div>"
             html += """
                         </td>
                     </tr>
             """
 
-        # Lower bounds
+        # Lower bounds - handle both dict and list formats
         if data_file.get('lower_bounds'):
             html += """
                     <tr style="background-color: #fff;">
                         <td style="padding: 5px; border: 1px solid #ddd; font-weight: bold; vertical-align: top;">Lower Bounds:</td>
                         <td style="padding: 5px; border: 1px solid #ddd;">
             """
-            for key, value in sorted(data_file['lower_bounds'].items()):
-                html += f"<div><code>{key}</code>: {value!r}</div>"
+            lower_bounds = data_file['lower_bounds']
+            if isinstance(lower_bounds, dict):
+                for key, value in sorted(lower_bounds.items()):
+                    html += f"<div><code>{key}</code>: {value!r}</div>"
+            else:
+                html += f"<div>{len(lower_bounds)} column(s) with bounds</div>"
             html += """
                         </td>
                     </tr>
             """
 
-        # Upper bounds
+        # Upper bounds - handle both dict and list formats
         if data_file.get('upper_bounds'):
             html += """
                     <tr style="background-color: #fff;">
                         <td style="padding: 5px; border: 1px solid #ddd; font-weight: bold; vertical-align: top;">Upper Bounds:</td>
                         <td style="padding: 5px; border: 1px solid #ddd;">
             """
-            for key, value in sorted(data_file['upper_bounds'].items()):
-                html += f"<div><code>{key}</code>: {value!r}</div>"
+            upper_bounds = data_file['upper_bounds']
+            if isinstance(upper_bounds, dict):
+                for key, value in sorted(upper_bounds.items()):
+                    html += f"<div><code>{key}</code>: {value!r}</div>"
+            else:
+                html += f"<div>{len(upper_bounds)} column(s) with bounds</div>"
             html += """
                         </td>
                     </tr>
@@ -504,6 +515,173 @@ def inspect_manifest(manifest_path: Path) -> None:
     """
 
     display(HTML(html))
+
+
+def inspect_manifest_list(manifest_list_path: Path, metadata_file_name: str = None, snapshot_id: int = None):
+    """
+    Read and display AVRO manifest list contents with visualization.
+
+    Args:
+        manifest_list_path: Path to AVRO manifest list file
+        metadata_file_name: Optional name of metadata file for context
+        snapshot_id: Optional snapshot ID for context
+    """
+    with open(manifest_list_path, 'rb') as f:
+        reader = fastavro.reader(f)
+        manifest_list_entries = list(reader)
+
+    html = f"""
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 1400px;">
+        <h2 style="color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px;">
+            📋 Manifest List: {manifest_list_path.name}
+        </h2>
+
+        <div style="background-color: #ecf0f1; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+            <h3 style="color: #34495e; margin-top: 0;">Overview</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr style="background-color: #fff;">
+                    <td style="padding: 8px; border: 1px solid #bdc3c7; font-weight: bold; width: 200px;">Total Manifests</td>
+                    <td style="padding: 8px; border: 1px solid #bdc3c7;">{len(manifest_list_entries)}</td>
+                </tr>
+                <tr style="background-color: #fff;">
+                    <td style="padding: 8px; border: 1px solid #bdc3c7; font-weight: bold;">File Size</td>
+                    <td style="padding: 8px; border: 1px solid #bdc3c7;">{manifest_list_path.stat().st_size:,} bytes</td>
+                </tr>
+    """
+
+    if snapshot_id:
+        html += f"""
+                <tr style="background-color: #fff;">
+                    <td style="padding: 8px; border: 1px solid #bdc3c7; font-weight: bold;">Snapshot ID</td>
+                    <td style="padding: 8px; border: 1px solid #bdc3c7;"><code>{snapshot_id}</code></td>
+                </tr>
+        """
+
+    html += """
+            </table>
+        </div>
+
+        <h3 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px;">
+            📦 Manifest Files
+        </h3>
+    """
+
+    for i, entry in enumerate(manifest_list_entries, 1):
+        manifest_path = Path(entry['manifest_path'].replace('file://', ''))
+        added = entry.get('added_files_count', 0)
+        existing = entry.get('existing_files_count', 0)
+        deleted = entry.get('deleted_files_count', 0)
+        added_rows = entry.get('added_rows_count', 0)
+        existing_rows = entry.get('existing_rows_count', 0)
+        deleted_rows = entry.get('deleted_rows_count', 0)
+        content = entry.get('content', 0)
+        content_type = {0: 'DATA', 1: 'DELETES'}.get(content, 'UNKNOWN')
+
+        # Determine border color based on status
+        if deleted > 0:
+            border_color = '#e74c3c'
+        elif added > 0:
+            border_color = '#27ae60'
+        else:
+            border_color = '#95a5a6'
+
+        html += f"""
+        <details style="margin-bottom: 10px;">
+            <summary style="cursor: pointer; background-color: #f9f9f9; padding: 10px; border-radius: 5px; border-left: 4px solid {border_color};">
+                <strong>{i}. {manifest_path.name}</strong>
+                <span style="background-color: #3498db; color: white; padding: 2px 8px; border-radius: 3px; font-size: 0.85em; margin-left: 10px;">{content_type}</span>
+            </summary>
+            <div style="margin-top: 10px; margin-left: 20px;">
+                <table style="width: 100%; font-size: 0.9em; border-collapse: collapse;">
+                    <tr style="background-color: #fff;">
+                        <td style="padding: 5px; border: 1px solid #ddd; font-weight: bold; width: 200px;">Manifest Length:</td>
+                        <td style="padding: 5px; border: 1px solid #ddd;">{entry.get('manifest_length', 0):,} bytes</td>
+                    </tr>
+                    <tr style="background-color: #fff;">
+                        <td style="padding: 5px; border: 1px solid #ddd; font-weight: bold;">Partition Spec ID:</td>
+                        <td style="padding: 5px; border: 1px solid #ddd;">{entry.get('partition_spec_id', 'N/A')}</td>
+                    </tr>
+                    <tr style="background-color: #fff;">
+                        <td style="padding: 5px; border: 1px solid #ddd; font-weight: bold;">Content Type:</td>
+                        <td style="padding: 5px; border: 1px solid #ddd;">{content_type}</td>
+                    </tr>
+                    <tr style="background-color: #e8f8f5;">
+                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;" colspan="2">File Counts</td>
+                    </tr>
+                    <tr style="background-color: #fff;">
+                        <td style="padding: 5px; border: 1px solid #ddd; padding-left: 20px;">Added files:</td>
+                        <td style="padding: 5px; border: 1px solid #ddd;"><span style="color: #27ae60; font-weight: bold;">+{added}</span></td>
+                    </tr>
+                    <tr style="background-color: #fff;">
+                        <td style="padding: 5px; border: 1px solid #ddd; padding-left: 20px;">Existing files:</td>
+                        <td style="padding: 5px; border: 1px solid #ddd;">{existing}</td>
+                    </tr>
+                    <tr style="background-color: #fff;">
+                        <td style="padding: 5px; border: 1px solid #ddd; padding-left: 20px;">Deleted files:</td>
+                        <td style="padding: 5px; border: 1px solid #ddd;"><span style="color: #e74c3c; font-weight: bold;">-{deleted}</span></td>
+                    </tr>
+                    <tr style="background-color: #e8f8f5;">
+                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;" colspan="2">Row Counts</td>
+                    </tr>
+                    <tr style="background-color: #fff;">
+                        <td style="padding: 5px; border: 1px solid #ddd; padding-left: 20px;">Added rows:</td>
+                        <td style="padding: 5px; border: 1px solid #ddd;"><span style="color: #27ae60; font-weight: bold;">+{added_rows:,}</span></td>
+                    </tr>
+                    <tr style="background-color: #fff;">
+                        <td style="padding: 5px; border: 1px solid #ddd; padding-left: 20px;">Existing rows:</td>
+                        <td style="padding: 5px; border: 1px solid #ddd;">{existing_rows:,}</td>
+                    </tr>
+                    <tr style="background-color: #fff;">
+                        <td style="padding: 5px; border: 1px solid #ddd; padding-left: 20px;">Deleted rows:</td>
+                        <td style="padding: 5px; border: 1px solid #ddd;"><span style="color: #e74c3c; font-weight: bold;">-{deleted_rows:,}</span></td>
+                    </tr>
+                </table>
+            </div>
+        </details>
+        """
+
+    # Add linkage visualization
+    if metadata_file_name and snapshot_id:
+        html += f"""
+        <div style="margin-top: 30px; background-color: #f5f5f5; padding: 15px; border-radius: 5px;">
+            <h3 style="color: #2c3e50; margin-top: 0;">Metadata Linkage</h3>
+            <div style="font-family: monospace; line-height: 1.8;">
+                <div>📄 {metadata_file_name}</div>
+                <div style="margin-left: 20px;">└─ 📸 Snapshot {snapshot_id}</div>
+                <div style="margin-left: 40px;">└─ 📋 {manifest_list_path.name}</div>
+        """
+
+        for i, entry in enumerate(manifest_list_entries, 1):
+            manifest_path = Path(entry['manifest_path'].replace('file://', ''))
+            added = entry.get('added_files_count', 0)
+            existing = entry.get('existing_files_count', 0)
+            deleted = entry.get('deleted_files_count', 0)
+            rows = entry.get('added_rows_count', 0) + entry.get('existing_rows_count', 0)
+
+            status = []
+            if added > 0:
+                status.append(f"+{added} files")
+            if existing > 0:
+                status.append(f"{existing} existing")
+            if deleted > 0:
+                status.append(f"-{deleted} files")
+            status_str = ", ".join(status) if status else "no changes"
+
+            connector = "├─" if i < len(manifest_list_entries) else "└─"
+            html += f'<div style="margin-left: 60px;">{connector} 📦 {manifest_path.name}</div>\n'
+            html += f'<div style="margin-left: 60px; color: #666;">{"│" if i < len(manifest_list_entries) else " "}   ({status_str}, {rows:,} rows)</div>\n'
+
+        html += """
+            </div>
+        </div>
+        """
+
+    html += """
+    </div>
+    """
+
+    display(HTML(html))
+    return manifest_list_entries
 
 
 def compare_snapshots(table, snapshot_id_1: int, snapshot_id_2: int) -> None:

@@ -62,3 +62,7 @@ jupyter lab
 ## Contributing analyses
 
 Please remember to clear the output in your notebook before committing it.
+
+## AI note
+
+During creation the course, I used Copilot and Claude Code to review the curriculum for correctness. Parts of the notebook and helper code are generated.

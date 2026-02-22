@@ -12,7 +12,7 @@ def inspect_iceberg_table(table) -> None:
         table: PyIceberg Table object
     """
     metadata = table.metadata
-    snapshots = list(table.history())
+    snapshots = list(table.snapshots())
     current_snapshot = table.current_snapshot()
 
     html = f"""

@@ -15,7 +15,9 @@ Learn practical skills for IoT data management and analytics:
 
 * Module 1: Apache Parquet
 * Module 2: Apache Iceberg
-* Module 3: Medallion architecture
+* Module 3: Apache Spark and the medallion architecture
+
+Note: Module 2 and 3 are currently work in progress.
 
 ## Prerequisites
 
@@ -62,3 +64,7 @@ jupyter lab
 ## Contributing analyses
 
 Please remember to clear the output in your notebook before committing it.
+
+## AI note
+
+During creation the course, I used Copilot and Claude Code to review the curriculum for correctness. Parts of the notebook and helper code are generated.

@@ -1,7 +1,7 @@
 pandas>=3
 pyarrow>=22.0
 daft>=0.7.0
-pyiceberg>=0.10
+pyiceberg[pyiceberg-core]>=0.11
 matplotlib>=3.10
 python-dateutil
 jupyterlab>=4.5
@@ -10,3 +10,5 @@ boto3
 s3fs
 flask
 werkzeug
+sqlalchemy
+fastavro

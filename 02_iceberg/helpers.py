@@ -360,18 +360,16 @@ def inspect_metadata_json(json_path: Path) -> None:
     return metadata
 
 
-def inspect_manifest(manifest_path: Path) -> None:
+def inspect_manifest(manifest_path: Path):
     """
     Read and display AVRO manifest file contents.
 
     Args:
         manifest_path: Path to AVRO manifest file
+
+    Returns:
+        List of data file paths referenced in this manifest
     """
-    try:
-        import fastavro
-    except ImportError:
-        print("⚠️  fastavro not installed. Install with: pip install fastavro")
-        return
 
     with open(manifest_path, 'rb') as f:
         reader = fastavro.reader(f)
@@ -402,6 +400,8 @@ def inspect_manifest(manifest_path: Path) -> None:
         </h3>
     """
 
+    data_file_paths = []
+
     for i, record in enumerate(records, 1):
         status = record.get('status', 0)
         status_name = {0: 'EXISTING', 1: 'ADDED', 2: 'DELETED'}.get(status, 'UNKNOWN')
@@ -409,6 +409,7 @@ def inspect_manifest(manifest_path: Path) -> None:
 
         data_file = record.get('data_file', {})
         file_path = data_file.get('file_path', 'N/A')
+        data_file_paths.append(Path(file_path.replace('file://', '')))
 
         html += f"""
         <details style="margin-bottom: 10px;">
@@ -515,6 +516,7 @@ def inspect_manifest(manifest_path: Path) -> None:
     """
 
     display(HTML(html))
+    return data_file_paths
 
 
 def inspect_manifest_list(manifest_list_path: Path, metadata_file_name: str = None, snapshot_id: int = None):

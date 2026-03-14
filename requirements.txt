@@ -12,3 +12,4 @@ flask
 werkzeug
 sqlalchemy
 fastavro
+pyspark>=4.0,<4.1
